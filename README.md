@@ -5,6 +5,14 @@
 **SIDISH Identifies High-Risk Disease-Associated Cells and Biomarkers by
 Integrating Single-Cell Depth and Bulk Breadth**
 
+This is an R package version of SIDISH, see
+[SigBridgeR](https://github.com/WangLabCSU/SigBridgeR) for its usage.
+Independently usage of rSIDISH is also viable.
+
+To install the package, run:
+
+    pak::pkg_install("Exceret/rSIDISH")
+
 ## Table of Contents
 
 -   [Key Capabilities](#key-capabilities)
