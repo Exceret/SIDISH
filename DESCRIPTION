@@ -15,4 +15,4 @@ Imports:
     anndataR,
     cli,
     reticulate,
-    SigBridgeRUtils
+    SigBridgeRUtils (>= 0.2.3)

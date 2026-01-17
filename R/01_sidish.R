@@ -16,9 +16,23 @@ sidish <- function(
   if (!inherits(sc_data, "Seurat")) {
     cli::cli_abort(c(
       "x" = "{.arg sc_data} must be a {.cls SeuratObject}",
-      ">" = "but it is currently of {.cls {class(sc_data)})"
+      ">" = "Currently {.arg sc_data} is of {.cls {class(sc_data)}}"
     ))
   }
+
+  # * filter genes & make it in order
+  common_genes <- intersect(
+    rownames(matched_bulk),
+    rownames(sc_data)
+  )
+  if (length(common_genes) == 0) {
+    cli::cli_abort(c(
+      "x" = "No common genes between {.arg matched_bulk} and {.arg sc_data}",
+      ">" = "Please check the gene names and try again."
+    ))
+  }
+  sc_data <- sc_data[common_genes, ]
+  matched_bulk <- matched_bulk[common_genes, ]
 
   adata <- anndataR::as_AnnData(
     x = sc_data,
@@ -31,7 +45,17 @@ sidish <- function(
     obsp_mapping = TRUE,
     varp_mapping = TRUE,
     uns_mapping = TRUE,
-    assay_name = 'assay',
+    assay_name = "assay",
     output_class = "ReticulateAnnData"
   )
+  py <- reticulate::py
+  reticulate::py_require("sidish")
+
+  # * activate binding
+  reticulate::py_run_string("print('\n')")
+  py$adata <- adata
+  py$bulk <- as.data.frame(t(matched_bulk)) # matrix will become np.array
+
+  colnames(phenotype) <- c("Overall_survival_days", "Sample_Status")
+  py$survival <- as.data.frame(phenotype)
 }
