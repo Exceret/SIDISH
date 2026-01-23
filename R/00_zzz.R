@@ -18,7 +18,7 @@
   )
 
   deps <- list(
-    "SIDISH", # 无特定版本号
+    "SIDISH",
     "anndata>=0.11.1",
     "bioinfokit>=2.1.3",
     "h5py>=3.12.1",

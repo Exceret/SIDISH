@@ -34,6 +34,20 @@ sidish <- function(
   sc_data <- sc_data[common_genes, ]
   matched_bulk <- matched_bulk[common_genes, ]
 
+  # * samples matching
+  if (!all(colnames(matched_bulk) == rownames(phenotype))) {
+    cli::cli_warn(
+      "Samples in {.arg matched_bulk} and {.arg phenotype} do not match, \\
+      auto-correcting samples"
+    )
+    cm_samples <- intersect(
+      colnames(matched_bulk),
+      rownames(phenotype)
+    )
+    matched_bulk <- matched_bulk[, cm_samples]
+    phenotype <- phenotype[cm_samples, ]
+  }
+
   adata <- anndataR::as_AnnData(
     x = sc_data,
     x_mapping = "counts",
@@ -48,14 +62,41 @@ sidish <- function(
     assay_name = "assay",
     output_class = "ReticulateAnnData"
   )
-  py <- reticulate::py
-  reticulate::py_require("sidish")
 
-  # * activate binding
-  reticulate::py_run_string("print('\n')")
-  py$adata <- adata
-  py$bulk <- as.data.frame(t(matched_bulk)) # matrix will become np.array
+  colnames(phenotype) <- c("duration", "event")
+  # matrix will become np.array
+  bulk <- reticulate::r_to_py(as.data.frame(t(matched_bulk)))
 
-  colnames(phenotype) <- c("Overall_survival_days", "Sample_Status")
-  py$survival <- as.data.frame(phenotype)
+
+  # import scanpy as sc
+  # import pandas as pd
+  # import numpy as np
+  # import torch
+  # import random
+  # import os
+  # import matplotlib.pyplot as plt
+
+  sc <- reticulate::import("scanpy", as = "sc")
+  pd <- reticulate::import("pandas", as = "pd")
+  np <- reticulate::import("numpy", as = "np")
+  torch <- reticulate::import("torch")
+  random <- reticulate::import("random")
+  os <- reticulate::import("os")
+  plt <- reticulate::import("matplotlib.pyplot", as = "plt")
+  sidish <- reticulate::import("SIDISH")
+
+  torch$manual_seed(seed)
+  torch$cuda$manual_seed(seed)
+  torch$cuda$manual_seed_all(seed) # if you are using multi-GPU.
+  random$seed(seed)
+  torch$backends$cudnn$deterministic <- TRUE
+  torch$backends$cudnn$benchmark <- FALSE
+  ite <- 0
+
+  set_seed(seed = seed, np = np, torch = torch, random = random)
+
+  sdh <- sidish$SIDISH(adata, bulk, "cuda", seed = ite)
+  sdh$init_Phase1(225, 20, 32, c(512, 128), 256, "Adam", 1.0e-4, 1e-4, 0)
+  sdh$init_Phase2(500, 128, 1e-4, 0, 0.2, 256)
+  train_adata <- sdh$train(5, 0.95, 30, "../data/LUNG/", distribution_fit = "fitted")
 }
