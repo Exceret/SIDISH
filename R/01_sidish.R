@@ -1,3 +1,4 @@
+#' @export
 sidish <- function(
   matched_bulk,
   sc_data,
@@ -13,12 +14,7 @@ sidish <- function(
     TRUE
   seed <- dots$seed %||% SigBridgeRUtils::getFuncOption("seed") %||% 123L
 
-  if (!inherits(sc_data, "Seurat")) {
-    cli::cli_abort(c(
-      "x" = "{.arg sc_data} must be a {.cls SeuratObject}",
-      ">" = "Currently {.arg sc_data} is of {.cls {class(sc_data)}}"
-    ))
-  }
+  set.seed(seed)
 
   # * filter genes & make it in order
   common_genes <- intersect(
@@ -59,44 +55,20 @@ sidish <- function(
     obsp_mapping = TRUE,
     varp_mapping = TRUE,
     uns_mapping = TRUE,
-    assay_name = "assay",
+    assay_name = assay,
     output_class = "ReticulateAnnData"
   )
 
   colnames(phenotype) <- c("duration", "event")
-  # matrix will become np.array
-  bulk <- reticulate::r_to_py(as.data.frame(t(matched_bulk)))
 
+  py <- reticulate::py
+  # avtivate python connection
+  reticulate::py_run_string("import os")
 
-  # import scanpy as sc
-  # import pandas as pd
-  # import numpy as np
-  # import torch
-  # import random
-  # import os
-  # import matplotlib.pyplot as plt
-
-  sc <- reticulate::import("scanpy", as = "sc")
-  pd <- reticulate::import("pandas", as = "pd")
-  np <- reticulate::import("numpy", as = "np")
-  torch <- reticulate::import("torch")
-  random <- reticulate::import("random")
-  os <- reticulate::import("os")
-  plt <- reticulate::import("matplotlib.pyplot", as = "plt")
-  sidish <- reticulate::import("SIDISH")
-
-  torch$manual_seed(seed)
-  torch$cuda$manual_seed(seed)
-  torch$cuda$manual_seed_all(seed) # if you are using multi-GPU.
-  random$seed(seed)
-  torch$backends$cudnn$deterministic <- TRUE
-  torch$backends$cudnn$benchmark <- FALSE
-  ite <- 0
-
-  set_seed(seed = seed, np = np, torch = torch, random = random)
-
-  sdh <- sidish$SIDISH(adata, bulk, "cuda", seed = ite)
-  sdh$init_Phase1(225, 20, 32, c(512, 128), 256, "Adam", 1.0e-4, 1e-4, 0)
-  sdh$init_Phase2(500, 128, 1e-4, 0, 0.2, 256)
-  train_adata <- sdh$train(5, 0.95, 30, "../data/LUNG/", distribution_fit = "fitted")
+  # * params pass to python
+  # matrix will become np.array, we need pd.DataFrame
+  py$bulk <- reticulate::r_to_py(as.data.frame(t(matched_bulk)))
+  py$adata <- adata
+  py$survival_df <- reticulate::r_to_py(phenotype)
+  py$seed <- reticulate::r_to_py(seed)
 }
