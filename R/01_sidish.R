@@ -19,44 +19,40 @@
 #' @param sidish_tools Python script for SIDISH training
 #' @param assay Character string specifying the assay name for AnnData conversion
 #' (default \code{"RNA"}). Used when converting \code{sc_data} to AnnData format.
-#' @param ... Additional parameters passed to the Python SIDISH implementation. Supported
-#' parameters include:
-#' \describe{
-#' \item{\code{device}}{PyTorch device (\code{"cuda"} or \code{"cpu"}). Default \code{"cuda"}.}
-#' \item{\code{phase1_epochs}}{VAE training epochs. Default 225.}
-#' \item{\code{phase1_latent_size}}{VAE latent dimension. Default 32.}
-#' \item{\code{phase2_epochs}}{Deep Cox training epochs. Default 500.}
-#' \item{\code{train_percentile}}{Percentile threshold for high-risk cell definition (e.g., 0.95 = top 5%). Default 0.95.}
-#' \item{\code{train_iterations}}{Number of training iterations. Default 5.}
-#' \item{\code{patient_id}}{Column name for patient IDs in \code{phenotype}. Default \code{"Sample"}.}
-#' \item{\code{processed}}{Whether input data are pre-normalized. Default \code{TRUE}.}
-#' \item{\code{verbose}}{Show training progress. Default inherits from
-#' \code{options(SigBridgeR.verbose)} or \code{TRUE}.}
-#' \item{\code{seed}}{Random seed for reproducibility. Default inherits from
-#' \code{options(SigBridgeR.seed)} or \code{123L}.}
-#' }
-#' Unrecognized parameters are passed to Python but ignored by SIDISH. All parameters
-#' support partial matching (e.g., \code{phase1_ep} for \code{phase1_epochs}).
+#' @param ... Additional parameters passed to the Python SIDISH implementation. Key supported
+#'   parameters include:
+#'   - \code{device}: PyTorch device (\code{"cuda"} or \code{"cpu"}); default \code{"cuda"}
+#'   - \code{phase1_epochs}: VAE training epochs; default \code{225L}
+#'   - \code{phase1_latent_size}: VAE latent dimension; default \code{32L}
+#'   - \code{phase2_epochs}: Deep Cox training epochs; default \code{500L}
+#'   - \code{train_percentile}: Percentile threshold for high-risk cells (e.g., 0.95 = top 5%);
+#'     default \code{0.95}
+#'   - \code{train_iterations}: Number of training iterations; default \code{5L}
+#'   - \code{patient_id}: Column name for patient IDs in \code{phenotype}; default \code{"Sample"}
+#'   - \code{processed}: Whether input data are pre-normalized; default \code{TRUE}
+#'   - \code{verbose}: Show training progress; default inherits from
+#'     \code{options(SigBridgeR.verbose)} or \code{TRUE}
+#'   - \code{seed}: Random seed for reproducibility; default inherits from
+#'     \code{options(SigBridgeR.seed)} or \code{123L}
+#'   Unrecognized parameters are passed to Python but ignored by SIDISH. Partial matching is
+#'   supported (e.g., \code{phase1_ep} for \code{phase1_epochs}). See the 'Default Parameters'
+#'   section for a complete parameter reference.
 #'
-#'
+#' @details
 #' Memory considerations:
-#' \itemize{
-#' \item GPU acceleration (\code{device = "cuda"}) significantly speeds up training
-#' \item For large datasets (>50k cells), reduce \code{phase1_batch_size} or
-#' \code{phase2_batch_size_bulk}
-#' \item Set \code{train_num_workers = 0} (default) for reproducibility; increase only
-#' if deterministic results aren't required
-#' }}
+#'   - GPU acceleration (\code{device = "cuda"}) significantly speeds up training
+#'   - For large datasets (>50k cells), reduce \code{phase1_batch_size} or
+#'     \code{phase2_batch_size_bulk}
+#'   - Set \code{train_num_workers = 0} (default) for reproducibility; increase only if
+#'     deterministic results aren't required
 #'
 #' @note
 #' Requires Python environment with:
-#' \itemize{
-#' \item \code{SIDISH} package (install via \code{pip install SIDISH})
-#' \item PyTorch (\code{torch}), Scanpy (\code{scanpy}), and dependencies
-#' \item Proper CUDA setup for GPU usage (\code{device = "cuda"})
-#' }
-#' The Python script \code{inst/python/01_training_SIDISH.py} must be available in the
-#' package installation directory.
+#'   - \code{SIDISH} package (install via \code{pip install SIDISH})
+#'   - PyTorch (\code{torch}), Scanpy (\code{scanpy}), and dependencies
+#'   - Proper CUDA setup for GPU usage (\code{device = "cuda"})
+#'   The Python script \code{inst/python/01_training_SIDISH.py} must be available in the
+#'   package installation directory.
 #'
 #' @export
 sidish <- function(
@@ -79,7 +75,14 @@ sidish <- function(
     TRUE
   seed <- dots$seed %||% SigBridgeRUtils::getFuncOption("seed") %||% 123L
 
+  params <- modify_sidish_params(usr_list = dots)
+
   set.seed(seed)
+
+  if (verbose) {
+    ts_cli$cli_alert_info(cli::col_green("Start SIDISH screening"))
+    ts_cli$cli_alert_info("Checking inputs")
+  }
 
   # * filter genes & make it in order
   common_genes <- intersect(
@@ -95,11 +98,13 @@ sidish <- function(
   sc_data <- sc_data[common_genes, ]
   matched_bulk <- matched_bulk[common_genes, ]
 
+  meta_cols <- colnames(sc_data[[]])
+
   # * samples matching
   if (!all(colnames(matched_bulk) == rownames(phenotype))) {
     cli::cli_warn(
       "Samples in {.arg matched_bulk} and {.arg phenotype} do not match, \\
-      auto-correcting samples"
+      try auto-correcting samples"
     )
     cm_samples <- intersect(
       colnames(matched_bulk),
@@ -124,7 +129,6 @@ sidish <- function(
     output_class = "ReticulateAnnData"
   )
 
-  #   reticulate::use_python(python)
   py <- reticulate::py
   # avtivate python connection
   reticulate::py_run_string("import os")
@@ -136,13 +140,11 @@ sidish <- function(
   py$survival_df <- reticulate::r_to_py(phenotype)
 
   # * other params
-  if (length(dots) > 0) {
-    if (any("" %in% names(dots))) {
-      cli::cli_abort(c("x" = "Variable name cannot be empty"))
-    }
-    for (var_name in names(dots)) {
-      py[[var_name]] <- reticulate::r_to_py(dots[[var_name]])
-    }
+  if (any("" %in% names(params))) {
+    cli::cli_abort(c("x" = "Variable name cannot be empty"))
+  }
+  for (var_name in names(params)) {
+    py[[var_name]] <- reticulate::r_to_py(params[[var_name]])
   }
 
   py$seed <- reticulate::r_to_py(seed)
@@ -152,5 +154,21 @@ sidish <- function(
 
   obs <- reticulate::py_to_r(py$obs)
 
-  obs
+  sc_data <- SeuratObject::AddMetaData(
+    object = sc_data,
+    metadata = obs[, -meta_cols]
+  )
+  sc_data <- SigBridgeRUtils::AddMisc(
+    seurat_obj = sc_data,
+    SIDISH = list(
+      label_type = label_type,
+      phenotype_class = phenotype_class
+    )
+  )
+
+  if (verbose) {
+    ts_cli$cli_alert_info(cli::col_green("SIDISH Done"))
+  }
+
+  sc_data
 }

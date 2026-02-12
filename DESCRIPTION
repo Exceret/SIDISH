@@ -15,4 +15,6 @@ Imports:
     anndataR,
     cli,
     reticulate,
+    rlang,
+    SeuratObject,
     SigBridgeRUtils (>= 0.2.3)

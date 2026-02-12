@@ -1,5 +1,4 @@
-from typing import Any
-from typing import Callable
+from typing import Any, Callable, Optional, Literal
 import inspect
 import scanpy as sc
 import pandas as pd
@@ -9,6 +8,7 @@ import random
 import os
 from SIDISH import SIDISH as sidish
 from SIDISH.SIDISH import preprocess
+from datetime import datetime
 
 
 # Set seeds for reproducibility
@@ -43,6 +43,39 @@ def filter_args_4_func(input_dict: dict[str, Any], func: Callable) -> dict[str, 
     return {k: v for k, v in input_dict.items() if k in func_params}
 
 
+def ts_print(
+    message: str,
+    symbol: Optional[Literal["info", "success", "warning", "error", "debug"]] = None,
+    color: bool = True,
+) -> None:
+    """
+    带时间戳的信息输出函数
+
+    Args:
+        message: 要输出的消息内容
+        symbol: CLI 符号类型，可选值: 'info', 'success', 'warning', 'error', 'debug'，默认无符号
+        color: 是否启用 ANSI 颜色输出（默认 True）
+    """
+    timestamp = datetime.now().strftime("[%Y/%m/%d %H:%M:%S]")
+
+    symbols = {
+        "info": ("ℹ", "\033[36m" if color else ""),  # Cyan
+        "success": ("✔", "\033[32m" if color else ""),  # Green
+        "warning": ("⚠", "\033[33m" if color else ""),  # Yellow
+        "error": ("✖", "\033[31m" if color else ""),  # Red
+        "debug": ("◼", "\033[35m" if color else ""),  # Magenta
+    }
+
+    t_prefix: str = f"{timestamp} "
+    if symbol in symbols:
+        sym, col = symbols[symbol]
+        symbol_prefix: str = f"{col}{sym} \033[0m" if color else f"{sym} "
+    else:
+        symbol_prefix: str = ""
+
+    print(symbol_prefix + f"{t_prefix}{message}")
+
+
 # Call the seed setting function
 def main(
     # ? get them from R scirpt
@@ -52,11 +85,15 @@ def main(
     seed: int = 123,
 ) -> None:
     other_args: dict[str, Any] = globals()
+    verbose: bool = other_args.get("verbose", True)
 
     # * set seed
     set_seed(seed=seed)
 
     ite: int = 0
+
+    if verbose:
+        ts_print(message="Preprocessing", symbol="info")
 
     adata, bulk_merged = preprocess(
         adata=adata,
@@ -66,6 +103,9 @@ def main(
         celltype_name=other_args.get("celltype_name", "celltype_major"),
         processed=other_args.get("processed", True),
     )
+
+    if verbose:
+        ts_print(message="Preprocessing", symbol="info")
 
     sdh: sidish = sidish(
         adata=adata,
@@ -77,6 +117,9 @@ def main(
     )
 
     # Reduced batch size to avoid memory issues and ensure num_workers=0
+
+    if verbose:
+        ts_print(message="Initiate phase 1", symbol="info")
 
     sdh.init_Phase1(
         # Number of epochs for initial VAE training.
@@ -100,6 +143,9 @@ def main(
         type=other_args.get("phase1_type", "Normal"),  # or 'Dense'
     )
 
+    if verbose:
+        ts_print(message="Initiate phase 2", symbol="info")
+
     sdh.init_Phase2(
         # Number of training epochs for Deep Cox model.
         epochs=other_args.get("phase2_epochs", 500),
@@ -115,6 +161,10 @@ def main(
         batch_size_bulk=other_args.get("phase2_batch_size_bulk", 256),
     )
 
+    if verbose:
+        ts_print(message="Training", symbol="info")
+
+    path: str = other_args.get("train_path", "./")
     train_adata: sc.AnnData = sdh.train(
         # Number of training iterations.
         iterations=other_args.get("train_iterations", 5),
@@ -123,15 +173,18 @@ def main(
         # Scaling factor for updating weights.
         steepness=other_args.get("train_steepness", 30),
         # Directory for saving model checkpoints.
-        path=other_args.get("train_path", "./"),
+        path=path,
         # Number of parallel workers (default=8).
         num_workers=other_args.get("train_num_workers", 0),
         # If True, displays training progress (default=True).
-        show=other_args.get("verbose", True),
+        show=verbose,
         distribution_fit=other_args.get(
             "train_distribution_fit", "fitted"
         ),  # or "default"
     )
+
+    if verbose:
+        ts_print(message=f"Models saved to \033[94m{path}\033[0m", symbol="success")
 
     return train_adata
 
@@ -142,7 +195,6 @@ res: sc.AnnData = main(
     bulk=globals().get("bulk"),
     survival_df=globals().get("survival_df"),
     seed=globals().get("seed"),
-    save_model_dir=globals().get("save_model_dir"),
 )
 
 obs: pd.DataFrame = res.obs

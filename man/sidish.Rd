@@ -40,36 +40,39 @@ column names of \code{matched_bulk}.}
 \item{assay}{Character string specifying the assay name for AnnData conversion
 (default \code{"RNA"}). Used when converting \code{sc_data} to AnnData format.}
 
-\item{...}{Additional parameters passed to the Python SIDISH implementation. Supported
+\item{...}{Additional parameters passed to the Python SIDISH implementation. Key supported
 parameters include:
-\describe{
-\item{\code{device}}{PyTorch device (\code{"cuda"} or \code{"cpu"}). Default \code{"cuda"}.}
-\item{\code{phase1_epochs}}{VAE training epochs. Default 225.}
-\item{\code{phase1_latent_size}}{VAE latent dimension. Default 32.}
-\item{\code{phase2_epochs}}{Deep Cox training epochs. Default 500.}
-\item{\code{train_percentile}}{Percentile threshold for high-risk cell definition (e.g., 0.95 = top 5\%). Default 0.95.}
-\item{\code{train_iterations}}{Number of training iterations. Default 5.}
-\item{\code{patient_id}}{Column name for patient IDs in \code{phenotype}. Default \code{"Sample"}.}
-\item{\code{processed}}{Whether input data are pre-normalized. Default \code{TRUE}.}
-\item{\code{verbose}}{Show training progress. Default inherits from
-\code{options(SigBridgeR.verbose)} or \code{TRUE}.}
-\item{\code{seed}}{Random seed for reproducibility. Default inherits from
-\code{options(SigBridgeR.seed)} or \code{123L}.}
+\itemize{
+\item \code{device}: PyTorch device (\code{"cuda"} or \code{"cpu"}); default \code{"cuda"}
+\item \code{phase1_epochs}: VAE training epochs; default \code{225L}
+\item \code{phase1_latent_size}: VAE latent dimension; default \code{32L}
+\item \code{phase2_epochs}: Deep Cox training epochs; default \code{500L}
+\item \code{train_percentile}: Percentile threshold for high-risk cells (e.g., 0.95 = top 5\%);
+default \code{0.95}
+\item \code{train_iterations}: Number of training iterations; default \code{5L}
+\item \code{patient_id}: Column name for patient IDs in \code{phenotype}; default \code{"Sample"}
+\item \code{processed}: Whether input data are pre-normalized; default \code{TRUE}
+\item \code{verbose}: Show training progress; default inherits from
+\code{options(SigBridgeR.verbose)} or \code{TRUE}
+\item \code{seed}: Random seed for reproducibility; default inherits from
+\code{options(SigBridgeR.seed)} or \code{123L}
+Unrecognized parameters are passed to Python but ignored by SIDISH. Partial matching is
+supported (e.g., \code{phase1_ep} for \code{phase1_epochs}). See the 'Default Parameters'
+section for a complete parameter reference.
+}}
 }
-Unrecognized parameters are passed to Python but ignored by SIDISH. All parameters
-support partial matching (e.g., \code{phase1_ep} for \code{phase1_epochs}).
-
+\description{
+Wrapper for the SIDISH (Semi-supervised Iterative Deep Learning for Identifying Single-cell High-Risk Populations) algorithm that identifies high-risk cells associated with patient survival outcomes.
+}
+\details{
 Memory considerations:
 \itemize{
 \item GPU acceleration (\code{device = "cuda"}) significantly speeds up training
 \item For large datasets (>50k cells), reduce \code{phase1_batch_size} or
 \code{phase2_batch_size_bulk}
-\item Set \code{train_num_workers = 0} (default) for reproducibility; increase only
-if deterministic results aren't required
-}}}
+\item Set \code{train_num_workers = 0} (default) for reproducibility; increase only if
+deterministic results aren't required
 }
-\description{
-Wrapper for the SIDISH (Semi-supervised Iterative Deep Learning for Identifying Single-cell High-Risk Populations) algorithm that identifies high-risk cells associated with patient survival outcomes.
 }
 \note{
 Requires Python environment with:
@@ -77,7 +80,7 @@ Requires Python environment with:
 \item \code{SIDISH} package (install via \code{pip install SIDISH})
 \item PyTorch (\code{torch}), Scanpy (\code{scanpy}), and dependencies
 \item Proper CUDA setup for GPU usage (\code{device = "cuda"})
-}
 The Python script \code{inst/python/01_training_SIDISH.py} must be available in the
 package installation directory.
+}
 }
