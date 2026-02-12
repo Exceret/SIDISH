@@ -26,8 +26,7 @@
 #' \item{\code{phase1_epochs}}{VAE training epochs. Default 225.}
 #' \item{\code{phase1_latent_size}}{VAE latent dimension. Default 32.}
 #' \item{\code{phase2_epochs}}{Deep Cox training epochs. Default 500.}
-#' \item{\code{train_percentile}}{Percentile threshold for high-risk cell definition
-#' (e.g., 0.95 = top 5%). Default 0.95.}
+#' \item{\code{train_percentile}}{Percentile threshold for high-risk cell definition (e.g., 0.95 = top 5%). Default 0.95.}
 #' \item{\code{train_iterations}}{Number of training iterations. Default 5.}
 #' \item{\code{patient_id}}{Column name for patient IDs in \code{phenotype}. Default \code{"Sample"}.}
 #' \item{\code{processed}}{Whether input data are pre-normalized. Default \code{TRUE}.}
@@ -39,24 +38,6 @@
 #' Unrecognized parameters are passed to Python but ignored by SIDISH. All parameters
 #' support partial matching (e.g., \code{phase1_ep} for \code{phase1_epochs}).
 #'
-#' @return A \code{data.frame} (rows = cells) containing cell-level annotations with:
-#' \itemize{
-#' \item \code{risk_score}: Continuous survival risk score per cell
-#' \item \code{high_risk}: Logical indicator for cells exceeding the risk threshold
-#' (determined by \code{train_percentile})
-#' \item Original cell metadata columns from the single-cell object
-#' \item Additional SIDISH-specific columns (e.g., latent representations)
-#' }
-#'
-#' @details
-#' The function performs automatic preprocessing:
-#' \itemize{
-#' \item Intersects and orders genes between bulk and single-cell matrices
-#' \item Matches sample IDs between \code{matched_bulk} and \code{phenotype}
-#' \item Converts \code{sc_data} to AnnData format via \code{anndataR}
-#' \item Sets synchronized random seeds in R (via \code{set.seed()}) and Python
-#' (NumPy, PyTorch, Python random) for reproducibility
-#' }
 #'
 #' Memory considerations:
 #' \itemize{
@@ -65,7 +46,7 @@
 #' \code{phase2_batch_size_bulk}
 #' \item Set \code{train_num_workers = 0} (default) for reproducibility; increase only
 #' if deterministic results aren't required
-#' }
+#' }}
 #'
 #' @note
 #' Requires Python environment with:
@@ -143,7 +124,7 @@ sidish <- function(
     output_class = "ReticulateAnnData"
   )
 
-  reticulate::use_python(python)
+  #   reticulate::use_python(python)
   py <- reticulate::py
   # avtivate python connection
   reticulate::py_run_string("import os")
