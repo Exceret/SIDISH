@@ -1,3 +1,82 @@
+#' @title Run SIDISH for cell-level survival risk estimation
+#'
+#' @description
+#' Wrapper for the SIDISH (Semi-supervised Iterative Deep Learning for Identifying Single-cell High-Risk Populations) algorithm that identifies high-risk cells associated with patient survival outcomes.
+#'
+#'
+#' @param matched_bulk Numeric matrix (genes × samples) of bulk RNA-seq expression.
+#' Row names must be gene identifiers matching those in \code{sc_data}. Values should be
+#' log-transformed (e.g., log2CPM or log2(TPM+1)).
+#' @param sc_data Fully preprocessed Seurat object
+#' @param phenotype Data frame containing survival information with samples as rows.
+#' For \code{phenotype_class = "survival"}, must contain at least two columns:
+#' survival time (numeric) and event indicator (binary 0/1). Row names must match
+#' column names of \code{matched_bulk}.
+#' @param label_type Character string specifying label of cell
+#' @param phenotype_class Character string indicating phenotype type. Currently only
+#' \code{"survival"} is supported (expects time/event columns).
+#' @param python python executable path. Passed to \code{reticulate::use_python()}.
+#' @param sidish_tools Python script for SIDISH training
+#' @param assay Character string specifying the assay name for AnnData conversion
+#' (default \code{"RNA"}). Used when converting \code{sc_data} to AnnData format.
+#' @param ... Additional parameters passed to the Python SIDISH implementation. Supported
+#' parameters include:
+#' \describe{
+#' \item{\code{device}}{PyTorch device (\code{"cuda"} or \code{"cpu"}). Default \code{"cuda"}.}
+#' \item{\code{phase1_epochs}}{VAE training epochs. Default 225.}
+#' \item{\code{phase1_latent_size}}{VAE latent dimension. Default 32.}
+#' \item{\code{phase2_epochs}}{Deep Cox training epochs. Default 500.}
+#' \item{\code{train_percentile}}{Percentile threshold for high-risk cell definition
+#' (e.g., 0.95 = top 5%). Default 0.95.}
+#' \item{\code{train_iterations}}{Number of training iterations. Default 5.}
+#' \item{\code{patient_id}}{Column name for patient IDs in \code{phenotype}. Default \code{"Sample"}.}
+#' \item{\code{processed}}{Whether input data are pre-normalized. Default \code{TRUE}.}
+#' \item{\code{verbose}}{Show training progress. Default inherits from
+#' \code{options(SigBridgeR.verbose)} or \code{TRUE}.}
+#' \item{\code{seed}}{Random seed for reproducibility. Default inherits from
+#' \code{options(SigBridgeR.seed)} or \code{123L}.}
+#' }
+#' Unrecognized parameters are passed to Python but ignored by SIDISH. All parameters
+#' support partial matching (e.g., \code{phase1_ep} for \code{phase1_epochs}).
+#'
+#' @return A \code{data.frame} (rows = cells) containing cell-level annotations with:
+#' \itemize{
+#' \item \code{risk_score}: Continuous survival risk score per cell
+#' \item \code{high_risk}: Logical indicator for cells exceeding the risk threshold
+#' (determined by \code{train_percentile})
+#' \item Original cell metadata columns from the single-cell object
+#' \item Additional SIDISH-specific columns (e.g., latent representations)
+#' }
+#'
+#' @details
+#' The function performs automatic preprocessing:
+#' \itemize{
+#' \item Intersects and orders genes between bulk and single-cell matrices
+#' \item Matches sample IDs between \code{matched_bulk} and \code{phenotype}
+#' \item Converts \code{sc_data} to AnnData format via \code{anndataR}
+#' \item Sets synchronized random seeds in R (via \code{set.seed()}) and Python
+#' (NumPy, PyTorch, Python random) for reproducibility
+#' }
+#'
+#' Memory considerations:
+#' \itemize{
+#' \item GPU acceleration (\code{device = "cuda"}) significantly speeds up training
+#' \item For large datasets (>50k cells), reduce \code{phase1_batch_size} or
+#' \code{phase2_batch_size_bulk}
+#' \item Set \code{train_num_workers = 0} (default) for reproducibility; increase only
+#' if deterministic results aren't required
+#' }
+#'
+#' @note
+#' Requires Python environment with:
+#' \itemize{
+#' \item \code{SIDISH} package (install via \code{pip install SIDISH})
+#' \item PyTorch (\code{torch}), Scanpy (\code{scanpy}), and dependencies
+#' \item Proper CUDA setup for GPU usage (\code{device = "cuda"})
+#' }
+#' The Python script \code{inst/python/01_training_SIDISH.py} must be available in the
+#' package installation directory.
+#'
 #' @export
 sidish <- function(
   matched_bulk,
@@ -5,6 +84,11 @@ sidish <- function(
   phenotype,
   label_type = NULL,
   phenotype_class = "survival",
+  python = NULL,
+  sidish_tools = system.file(
+    "python/01_training_SIDISH.py",
+    package = "rSIDISH"
+  ),
   assay = "RNA",
   ...
 ) {
@@ -59,6 +143,7 @@ sidish <- function(
     output_class = "ReticulateAnnData"
   )
 
+  reticulate::use_python(python)
   py <- reticulate::py
   # avtivate python connection
   reticulate::py_run_string("import os")
@@ -68,12 +153,23 @@ sidish <- function(
   py$bulk <- reticulate::r_to_py(as.data.frame(t(matched_bulk)))
   py$adata <- adata
   py$survival_df <- reticulate::r_to_py(phenotype)
+
+  # * other params
+  if (length(dots) > 0) {
+    if (any("" %in% names(dots))) {
+      cli::cli_abort(c("x" = "Variable name cannot be empty"))
+    }
+    for (var_name in names(dots)) {
+      py[[var_name]] <- reticulate::r_to_py(dots[[var_name]])
+    }
+  }
+
   py$seed <- reticulate::r_to_py(seed)
+  py$verbose <- reticulate::r_to_py(verbose)
 
-  reticulate::py_run_file(
-    "inst/python/01_training_SIDISH.py",
-    local = TRUE
-  )
+  reticulate::py_run_file(sidish_tools)
 
-  res
+  obs <- reticulate::py_to_r(py$obs)
+
+  obs
 }

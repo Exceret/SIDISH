@@ -1,2 +1,3 @@
 .Rproj.user
 tutorials/**
+tests/testthat/test-work.R
