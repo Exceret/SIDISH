@@ -46,7 +46,7 @@ sidish <- function(
 
   adata <- anndataR::as_AnnData(
     x = sc_data,
-    x_mapping = "counts",
+    x_mapping = "data",
     layers_mapping = TRUE,
     obs_mapping = TRUE,
     var_mapping = TRUE,
@@ -59,8 +59,6 @@ sidish <- function(
     output_class = "ReticulateAnnData"
   )
 
-  colnames(phenotype) <- c("duration", "event")
-
   py <- reticulate::py
   # avtivate python connection
   reticulate::py_run_string("import os")
@@ -71,4 +69,11 @@ sidish <- function(
   py$adata <- adata
   py$survival_df <- reticulate::r_to_py(phenotype)
   py$seed <- reticulate::r_to_py(seed)
+
+  reticulate::py_run_file(
+    "inst/python/01_training_SIDISH.py",
+    local = TRUE
+  )
+
+  res
 }
