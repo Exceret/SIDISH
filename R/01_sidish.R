@@ -19,32 +19,58 @@
 #' @param sidish_tools Python script for SIDISH training
 #' @param assay Character string specifying the assay name for AnnData conversion
 #' (default \code{"RNA"}). Used when converting \code{sc_data} to AnnData format.
-#' @param ... Additional parameters passed to the Python SIDISH implementation. Key supported
-#'   parameters include:
-#'   - \code{device}: PyTorch device (\code{"cuda"} or \code{"cpu"}); default \code{"cuda"}
-#'   - \code{phase1_epochs}: VAE training epochs; default \code{225L}
-#'   - \code{phase1_latent_size}: VAE latent dimension; default \code{32L}
-#'   - \code{phase2_epochs}: Deep Cox training epochs; default \code{500L}
-#'   - \code{train_percentile}: Percentile threshold for high-risk cells (e.g., 0.95 = top 5%);
-#'     default \code{0.95}
-#'   - \code{train_iterations}: Number of training iterations; default \code{5L}
-#'   - \code{patient_id}: Column name for patient IDs in \code{phenotype}; default \code{"Sample"}
-#'   - \code{processed}: Whether input data are pre-normalized; default \code{TRUE}
-#'   - \code{verbose}: Show training progress; default inherits from
-#'     \code{options(SigBridgeR.verbose)} or \code{TRUE}
-#'   - \code{seed}: Random seed for reproducibility; default inherits from
-#'     \code{options(SigBridgeR.seed)} or \code{123L}
-#'   Unrecognized parameters are passed to Python but ignored by SIDISH. Partial matching is
-#'   supported (e.g., \code{phase1_ep} for \code{phase1_epochs}). See the 'Default Parameters'
-#'   section for a complete parameter reference.
+#' @param ... Additional parameters passed to the Python SIDISH implementation. Parameters
+#' are grouped by functionality below. Unrecognized parameters are passed to Python but may be ignored.
 #'
-#' @details
-#' Memory considerations:
-#'   - GPU acceleration (\code{device = "cuda"}) significantly speeds up training
-#'   - For large datasets (>50k cells), reduce \code{phase1_batch_size} or
-#'     \code{phase2_batch_size_bulk}
-#'   - Set \code{train_num_workers = 0} (default) for reproducibility; increase only if
-#'     deterministic results aren't required
+#' ### Preprocessing parameters (used in `preprocess()`)
+#'
+#' - **`patient_id`** (default: `"Sample"`): Column name for patient IDs in the `phenotype` data frame.
+#' - **`celltype_name`** (default: `"celltype_major"`): Metadata column name containing cell type #' annotations in the Seurat object.
+#' - **`processed`** (default: `TRUE`): Whether the scRNA-seq data has been preprocessed (log-normalized). #' If `FALSE`, activates QC filtering steps below.
+#' - **`n_genes_by_counts`** (default: `5000`): Minimum number of genes per cell for QC filtering (used #' only when `processed=FALSE`).
+#' - **`pct_counts_mt`** (default: `10`): Maximum percentage of mitochondrial counts per cell for QC #' filtering (used only when `processed=FALSE`).
+#' - **`batch_correction`** (default: `FALSE`): Enable batch correction during preprocessing.
+#' - **`survival_`** (default: `"time"`): Column name for survival time in the `phenotype` data frame.
+#' - **`status`** (default: `"status"`): Column name for event status (0 = censored, 1 = event) in the #' `phenotype` data frame.
+#'
+#' ### Model initialization parameters (used in `sidish()` constructor)
+#'
+#' - **`device`** (default: `"cuda"`): PyTorch device for computation (`"cuda"` for GPU or `"cpu"`).
+#' - **`use_spatial_graph`** (default: `FALSE`): Enable spatial graph integration (relevant for spatial #' transcriptomics data).
+#' - **`k_neighbors`** (default: `NULL`): Number of neighbors for spatial graph construction; `NULL` uses #' automatic selection.
+#'
+#' ### Phase 1 parameters (VAE training via `init_Phase1()`)
+#'
+#' - **`phase1_epochs`** (default: `225`): Number of epochs for initial VAE training.
+#' - **`phase1_i_epochs`** (default: `20`): Number of epochs for VAE retraining in each iteration.
+#' - **`phase1_latent_size`** (default: `32`): Dimensionality of the VAE latent space.
+#' - **`phase1_layer_dims`** (default: `c(512, 128)`): Hidden layer dimensions for the VAE encoder/decoder.
+#' - **`phase1_batch_size`** (default: `256`): Batch size for VAE training.
+#' - **`phase1_optimizer`** (default: `"Adam"`): Optimizer used for VAE training.
+#' - **`phase1_lr`** (default: `1e-4`): Initial learning rate for VAE training.
+#' - **`phase1_lr_3`** (default: `1e-4`): Learning rate used in later VAE training iterations.
+#' - **`phase1_dropout`** (default: `0`): Dropout rate applied in VAE layers.
+#' - **`phase1_type`** (default: `"Normal"`): Representation type (`"Normal"` or `"Dense"`).
+#'
+#' ### Phase 2 parameters (Deep Cox training via `init_Phase2()`)
+#'
+#' - **`phase2_epochs`** (default: `500`): Number of training epochs for the Deep Cox model.
+#' - **`phase2_hidden`** (default: `128`): Number of neurons in the hidden layer of the Deep Cox model.
+#' - **`phase2_lr`** (default: `1e-4`): Learning rate for Deep Cox training.
+#' - **`phase2_dropout`** (default: `0`): Dropout rate applied in the Deep Cox model.
+#' - **`phase2_test_size`** (default: `0.2`): Proportion of data allocated to the test set.
+#' - **`phase2_batch_size_bulk`** (default: `256`): Batch size for bulk RNA-seq data during Deep Cox #' training.
+#'
+#' ### Training parameters (used in `train()`)
+#'
+#' - **`train_iterations`** (default: `5`): Total number of iterative training cycles.
+#' - **`train_percentile`** (default: `0.95`): Percentile threshold for defining high-risk cells (e.g., `0.#' 95` selects the top 5% highest-risk cells).
+#' - **`train_steepness`** (default: `30`): Scaling factor controlling the steepness of weight updates #' during risk propagation.
+#' - **`train_path`** (default: `"./SIDISH_res/"`): Directory path for saving model checkpoints and #' intermediate results.
+#' - **`train_num_workers`** (default: `0`): Number of parallel workers for data loading; set to `0` for #' reproducible results.
+#' - **`train_distribution_fit`** (default: `"fitted"`): Method for survival distribution fitting #' (`"fitted"` or `"default"`).
+#'
+#'
 #'
 #' @note
 #' Requires Python environment with:
@@ -152,19 +178,20 @@ sidish <- function(
 
   reticulate::py_run_file(sidish_tools)
 
-  obs <- reticulate::py_to_r(py$obs) # pd.DataFrame -> R data.frame
-  obs <- obs[, -meta_cols]
-  colnames(obs) <- paste0("SIDISH_", colnames(obs))
+  obs <- reticulate::py_to_r(py$sidish_obs) # pd.DataFrame -> R data.frame
+  colnames(obs)[3] <- paste0("SIDISH_", colnames(obs)[3])
+  obs$SIDISH <- ifelse(obs$SIDISH == "h", "Positive", "Other")
 
   sc_data <- SeuratObject::AddMetaData(
     object = sc_data,
-    metadata =
+    metadata = obs
   )
   sc_data <- SigBridgeRUtils::AddMisc(
     seurat_obj = sc_data,
     SIDISH = list(
       label_type = label_type,
-      phenotype_class = phenotype_class
+      phenotype_class = phenotype_class,
+      params = params
     )
   )
 

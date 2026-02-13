@@ -6,3 +6,4 @@
 ^[.]?air[.]toml$
 ^\.vscode$
 ^test/*
+^SIDISH_res/*

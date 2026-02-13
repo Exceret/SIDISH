@@ -9,6 +9,7 @@ import os
 from SIDISH import SIDISH as sidish
 from SIDISH.SIDISH import preprocess
 from datetime import datetime
+from pathlib import Path
 
 
 # Set seeds for reproducibility
@@ -116,7 +117,7 @@ def main(
     sdh: sidish = sidish(
         adata=adata,
         bulk=bulk_merged,
-        device=other_args.get("device", "cuda"),
+        device=other_args.get("device", "cuda"), # or "cpu"
         seed=ite,
         use_spatial_graph=other_args.get("use_spatial_graph", False),
         k_neighbors=other_args.get("k_neighbors", None),
@@ -170,7 +171,9 @@ def main(
     if verbose:
         ts_print(message="Training", symbol="info")
 
-    path: str = other_args.get("train_path", "./")
+    path: str = other_args.get("train_path", "./SIDISH_res/")
+    Path(path).mkdir(parents=True, exist_ok=True)
+    
     train_adata: sc.AnnData = sdh.train(
         # Number of training iterations.
         iterations=other_args.get("train_iterations", 5),
@@ -203,4 +206,4 @@ res: sc.AnnData = main(
     seed=globals().get("seed"),
 )
 
-obs: pd.DataFrame = res.obs
+sidish_obs: pd.DataFrame = res.obs[["SIDISH","SIDISH_value","risk_value"]]

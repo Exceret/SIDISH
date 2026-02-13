@@ -40,39 +40,68 @@ column names of \code{matched_bulk}.}
 \item{assay}{Character string specifying the assay name for AnnData conversion
 (default \code{"RNA"}). Used when converting \code{sc_data} to AnnData format.}
 
-\item{...}{Additional parameters passed to the Python SIDISH implementation. Key supported
-parameters include:
+\item{...}{Additional parameters passed to the Python SIDISH implementation. Parameters
+are grouped by functionality below. Unrecognized parameters are passed to Python but may be ignored.
+\subsection{Preprocessing parameters (used in \code{preprocess()})}{
 \itemize{
-\item \code{device}: PyTorch device (\code{"cuda"} or \code{"cpu"}); default \code{"cuda"}
-\item \code{phase1_epochs}: VAE training epochs; default \code{225L}
-\item \code{phase1_latent_size}: VAE latent dimension; default \code{32L}
-\item \code{phase2_epochs}: Deep Cox training epochs; default \code{500L}
-\item \code{train_percentile}: Percentile threshold for high-risk cells (e.g., 0.95 = top 5\%);
-default \code{0.95}
-\item \code{train_iterations}: Number of training iterations; default \code{5L}
-\item \code{patient_id}: Column name for patient IDs in \code{phenotype}; default \code{"Sample"}
-\item \code{processed}: Whether input data are pre-normalized; default \code{TRUE}
-\item \code{verbose}: Show training progress; default inherits from
-\code{options(SigBridgeR.verbose)} or \code{TRUE}
-\item \code{seed}: Random seed for reproducibility; default inherits from
-\code{options(SigBridgeR.seed)} or \code{123L}
-Unrecognized parameters are passed to Python but ignored by SIDISH. Partial matching is
-supported (e.g., \code{phase1_ep} for \code{phase1_epochs}). See the 'Default Parameters'
-section for a complete parameter reference.
+\item \strong{\code{patient_id}} (default: \code{"Sample"}): Column name for patient IDs in the \code{phenotype} data frame.
+\item \strong{\code{celltype_name}} (default: \code{"celltype_major"}): Metadata column name containing cell type #' annotations in the Seurat object.
+\item \strong{\code{processed}} (default: \code{TRUE}): Whether the scRNA-seq data has been preprocessed (log-normalized). #' If \code{FALSE}, activates QC filtering steps below.
+\item \strong{\code{n_genes_by_counts}} (default: \code{5000}): Minimum number of genes per cell for QC filtering (used #' only when \code{processed=FALSE}).
+\item \strong{\code{pct_counts_mt}} (default: \code{10}): Maximum percentage of mitochondrial counts per cell for QC #' filtering (used only when \code{processed=FALSE}).
+\item \strong{\code{batch_correction}} (default: \code{FALSE}): Enable batch correction during preprocessing.
+\item \strong{\code{survival_}} (default: \code{"time"}): Column name for survival time in the \code{phenotype} data frame.
+\item \strong{\code{status}} (default: \code{"status"}): Column name for event status (0 = censored, 1 = event) in the #' \code{phenotype} data frame.
+}
+}
+
+\subsection{Model initialization parameters (used in \code{sidish()} constructor)}{
+\itemize{
+\item \strong{\code{device}} (default: \code{"cuda"}): PyTorch device for computation (\code{"cuda"} for GPU or \code{"cpu"}).
+\item \strong{\code{use_spatial_graph}} (default: \code{FALSE}): Enable spatial graph integration (relevant for spatial #' transcriptomics data).
+\item \strong{\code{k_neighbors}} (default: \code{NULL}): Number of neighbors for spatial graph construction; \code{NULL} uses #' automatic selection.
+}
+}
+
+\subsection{Phase 1 parameters (VAE training via \code{init_Phase1()})}{
+\itemize{
+\item \strong{\code{phase1_epochs}} (default: \code{225}): Number of epochs for initial VAE training.
+\item \strong{\code{phase1_i_epochs}} (default: \code{20}): Number of epochs for VAE retraining in each iteration.
+\item \strong{\code{phase1_latent_size}} (default: \code{32}): Dimensionality of the VAE latent space.
+\item \strong{\code{phase1_layer_dims}} (default: \code{c(512, 128)}): Hidden layer dimensions for the VAE encoder/decoder.
+\item \strong{\code{phase1_batch_size}} (default: \code{256}): Batch size for VAE training.
+\item \strong{\code{phase1_optimizer}} (default: \code{"Adam"}): Optimizer used for VAE training.
+\item \strong{\code{phase1_lr}} (default: \code{1e-4}): Initial learning rate for VAE training.
+\item \strong{\code{phase1_lr_3}} (default: \code{1e-4}): Learning rate used in later VAE training iterations.
+\item \strong{\code{phase1_dropout}} (default: \code{0}): Dropout rate applied in VAE layers.
+\item \strong{\code{phase1_type}} (default: \code{"Normal"}): Representation type (\code{"Normal"} or \code{"Dense"}).
+}
+}
+
+\subsection{Phase 2 parameters (Deep Cox training via \code{init_Phase2()})}{
+\itemize{
+\item \strong{\code{phase2_epochs}} (default: \code{500}): Number of training epochs for the Deep Cox model.
+\item \strong{\code{phase2_hidden}} (default: \code{128}): Number of neurons in the hidden layer of the Deep Cox model.
+\item \strong{\code{phase2_lr}} (default: \code{1e-4}): Learning rate for Deep Cox training.
+\item \strong{\code{phase2_dropout}} (default: \code{0}): Dropout rate applied in the Deep Cox model.
+\item \strong{\code{phase2_test_size}} (default: \code{0.2}): Proportion of data allocated to the test set.
+\item \strong{\code{phase2_batch_size_bulk}} (default: \code{256}): Batch size for bulk RNA-seq data during Deep Cox #' training.
+}
+}
+
+\subsection{Training parameters (used in \code{train()})}{
+\itemize{
+\item \strong{\code{train_iterations}} (default: \code{5}): Total number of iterative training cycles.
+\item \strong{\code{train_percentile}} (default: \code{0.95}): Percentile threshold for defining high-risk cells (e.g., \code{0.#' 95} selects the top 5\% highest-risk cells).
+\item \strong{\code{train_steepness}} (default: \code{30}): Scaling factor controlling the steepness of weight updates #' during risk propagation.
+\item \strong{\code{train_path}} (default: \code{"./SIDISH_res/"}): Directory path for saving model checkpoints and #' intermediate results.
+\item \strong{\code{train_num_workers}} (default: \code{0}): Number of parallel workers for data loading; set to \code{0} for #' reproducible results.
+\item \strong{\code{train_distribution_fit}} (default: \code{"fitted"}): Method for survival distribution fitting #' (\code{"fitted"} or \code{"default"}).
+}
 }}
 }
 \description{
 Wrapper for the SIDISH (Semi-supervised Iterative Deep Learning for Identifying Single-cell High-Risk Populations) algorithm that identifies high-risk cells associated with patient survival outcomes.
-}
-\details{
-Memory considerations:
-\itemize{
-\item GPU acceleration (\code{device = "cuda"}) significantly speeds up training
-\item For large datasets (>50k cells), reduce \code{phase1_batch_size} or
-\code{phase2_batch_size_bulk}
-\item Set \code{train_num_workers = 0} (default) for reproducibility; increase only if
-deterministic results aren't required
-}
 }
 \note{
 Requires Python environment with:

@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(SIDISH)
+library(rSIDISH)
 
-test_check("SIDISH")
+test_check("rSIDISH")
