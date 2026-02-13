@@ -101,11 +101,17 @@ def main(
         survival_df=survival_df,
         patient_id=other_args.get("patient_id", "Sample"),
         celltype_name=other_args.get("celltype_name", "celltype_major"),
+        # ? single cell data has been processd with Seurat, no need to process again
         processed=other_args.get("processed", True),
+        # # used when `processed=False`
+        # n_genes_by_counts=other_args.get("n_genes_by_counts", 5000),
+        # # used when `processed=False`
+        # pct_counts_mt=other_args.get("pct_counts_mt",10),
+        # # used when `processed=False`
+        # batch_correction=other_args.get("batch_correction",False),
+        survival_="time",
+        status="status",
     )
-
-    if verbose:
-        ts_print(message="Preprocessing", symbol="info")
 
     sdh: sidish = sidish(
         adata=adata,

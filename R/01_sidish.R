@@ -152,11 +152,13 @@ sidish <- function(
 
   reticulate::py_run_file(sidish_tools)
 
-  obs <- reticulate::py_to_r(py$obs)
+  obs <- reticulate::py_to_r(py$obs) # pd.DataFrame -> R data.frame
+  obs <- obs[, -meta_cols]
+  colnames(obs) <- paste0("SIDISH_", colnames(obs))
 
   sc_data <- SeuratObject::AddMetaData(
     object = sc_data,
-    metadata = obs[, -meta_cols]
+    metadata =
   )
   sc_data <- SigBridgeRUtils::AddMisc(
     seurat_obj = sc_data,
