@@ -15,6 +15,7 @@
 #'   \item Checking for Windows GPUs using `wmic`
 #' }
 #' The function provides visual feedback through cli alerts about detection results.
+#' @export
 detect_gpu <- function(verbose = TRUE) {
   nvidia <- tryCatch(
     {
