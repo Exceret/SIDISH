@@ -10,7 +10,6 @@ sidish(
   phenotype,
   label_type = NULL,
   phenotype_class = "survival",
-  python = NULL,
   sidish_tools = system.file("python/01_training_SIDISH.py", package = "rSIDISH"),
   assay = "RNA",
   ...
@@ -32,8 +31,6 @@ column names of \code{matched_bulk}.}
 
 \item{phenotype_class}{Character string indicating phenotype type. Currently only
 \code{"survival"} is supported (expects time/event columns).}
-
-\item{python}{python executable path. Passed to \code{reticulate::use_python()}.}
 
 \item{sidish_tools}{Python script for SIDISH training}
 

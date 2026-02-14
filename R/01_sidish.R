@@ -15,7 +15,6 @@
 #' @param label_type Character string specifying label of cell
 #' @param phenotype_class Character string indicating phenotype type. Currently only
 #' \code{"survival"} is supported (expects time/event columns).
-#' @param python python executable path. Passed to \code{reticulate::use_python()}.
 #' @param sidish_tools Python script for SIDISH training
 #' @param assay Character string specifying the assay name for AnnData conversion
 #' (default \code{"RNA"}). Used when converting \code{sc_data} to AnnData format.
@@ -87,7 +86,6 @@ sidish <- function(
   phenotype,
   label_type = NULL,
   phenotype_class = "survival",
-  python = NULL,
   sidish_tools = system.file(
     "python/01_training_SIDISH.py",
     package = "rSIDISH"
