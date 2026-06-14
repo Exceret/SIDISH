@@ -1,0 +1,1 @@
+`sidish_environment.yml` was deprecated in v0.0.2, left here for reference.

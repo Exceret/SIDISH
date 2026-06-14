@@ -5,7 +5,8 @@
 **SIDISH Identifies High-Risk Disease-Associated Cells and Biomarkers by
 Integrating Single-Cell Depth and Bulk Breadth**
 
-This is an R package version of SIDISH, see
+This is an R package binding of
+[SIDISH](https://github.com/mcgilldinglab/SIDISH), see
 [SigBridgeR](https://github.com/WangLabCSU/SigBridgeR) for its usage.
 Independently usage of rSIDISH is also viable.
 
@@ -15,40 +16,38 @@ To install the package, run:
 
 ## Table of Contents
 
--   [Key Capabilities](#key-capabilities)
--   [Methods Overview](#methods-overview)
--   [Prerequisites](#prerequisites)
--   [Installation](#installation)
--   [Contact](#contact)
+- [Key Capabilities](#key-capabilities)
+- [Methods Overview](#methods-overview)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Contact](#contact)
 
 ## Key Capabilities
 
--   **Multi-Scale Data Integration** – Combines **single-cell** and
-    **bulk** RNA-seq data to enhance disease and biomarker insights.  
--   **High-Risk Cell Identification** – Detects disease-associated cell
-    populations linked to poor survival outcomes.  
--   **Biomarker Discovery** – Utilizes iterative deep learning and
-    SHAP-based feature selection to identify clinically significant
-    genes.  
--   **In-Silico Perturbation (Flexible Modes)** – Simulates gene
-    knockouts using both **binary scoring** (percentage of High-Risk
-    cells switching to Background) and **optional continuous scoring**
-    (average shift in predicted risk scores), capturing both strong and
-    subtle effects.
--   **Precision Medicine Applications** – Enables patient stratification
-    and therapeutic prioritization for diseases such as Pancreatic
-    Ductal Adenocarcinoma (PDAC), and triple-negative Breast Cancer
-    (TNBC).
--   **Adaptive Risk Distribution Modeling** – Supports a default Weibull
-    distribution for survival risk modeling, with an **optional
-    data-driven selection** procedure that compares Weibull, Gamma, and
-    Exponential families to automatically choose the best-fitting
-    distribution based on AIC, BIC, KS statistic, and R².
--   **Spatial Transcriptomics Compatible** – Incorporates spatial
-    transcriptomics and graph-based learning to identify High-Risk cell
-    subpopulations in their tissue context.
--   **Scalable & Generalizable** – Adapts to large datasets and diverse
-    disease types, ensuring robust and clinically meaningful analyses.
+- **Multi-Scale Data Integration** – Combines **single-cell** and
+  **bulk** RNA-seq data to enhance disease and biomarker insights.  
+- **High-Risk Cell Identification** – Detects disease-associated cell
+  populations linked to poor survival outcomes.  
+- **Biomarker Discovery** – Utilizes iterative deep learning and
+  SHAP-based feature selection to identify clinically significant
+  genes.  
+- **In-Silico Perturbation (Flexible Modes)** – Simulates gene knockouts
+  using both **binary scoring** (percentage of High-Risk cells switching
+  to Background) and **optional continuous scoring** (average shift in
+  predicted risk scores), capturing both strong and subtle effects.
+- **Precision Medicine Applications** – Enables patient stratification
+  and therapeutic prioritization for diseases such as Pancreatic Ductal
+  Adenocarcinoma (PDAC), and triple-negative Breast Cancer (TNBC).
+- **Adaptive Risk Distribution Modeling** – Supports a default Weibull
+  distribution for survival risk modeling, with an **optional
+  data-driven selection** procedure that compares Weibull, Gamma, and
+  Exponential families to automatically choose the best-fitting
+  distribution based on AIC, BIC, KS statistic, and R².
+- **Spatial Transcriptomics Compatible** – Incorporates spatial
+  transcriptomics and graph-based learning to identify High-Risk cell
+  subpopulations in their tissue context.
+- **Scalable & Generalizable** – Adapts to large datasets and diverse
+  disease types, ensuring robust and clinically meaningful analyses.
 
 ## Methods Overview
 

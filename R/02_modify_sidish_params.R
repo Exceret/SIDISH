@@ -34,7 +34,7 @@
 #'   - \code{phase1_optimizer}: Optimizer algorithm for VAE training (default: \code{"Adam"})
 #'   - \code{phase1_lr}: Initial learning rate for VAE training (default: \code{1.0e-4})
 #'   - \code{phase1_lr_3}: Learning rate for later VAE training iterations (default: \code{1.0e-4})
-#'   - \code{phase1_dropout}: Dropout rate for VAE layers (default: \code{0})
+#'   - \code{phase1_dropout}: Dropout rate for VAE layers (default: \code{0L})
 #'   - \code{phase1_type}: VAE architecture type: \code{"Normal"} (standard) or \code{"Dense"}
 #'     (dense representation) (default: \code{"Normal"})
 #'
@@ -44,7 +44,7 @@
 #'   - \code{phase2_hidden}: Number of neurons in hidden layer of Deep Cox network
 #'     (default: \code{128L})
 #'   - \code{phase2_lr}: Learning rate for Deep Cox model training (default: \code{1.0e-4})
-#'   - \code{phase2_dropout}: Dropout rate for Deep Cox layers (default: \code{0})
+#'   - \code{phase2_dropout}: Dropout rate for Deep Cox layers (default: \code{0L})
 #'   - \code{phase2_test_size}: Proportion of samples reserved for validation/testing
 #'     (default: \code{0.2})
 #'   - \code{phase2_batch_size_bulk}: Mini-batch size for bulk data during Deep Cox training
@@ -56,7 +56,7 @@
 #'   - \code{train_percentile}: Percentile threshold for defining high-risk cells
 #'     (e.g., 0.95 = top 5\% riskiest cells) (default: \code{0.95})
 #'   - \code{train_steepness}: Scaling factor controlling steepness of risk score updates
-#'     during iterations (default: \code{30})
+#'     during iterations (default: \code{30L})
 #'   - \code{train_path}: Directory path for saving model checkpoints and intermediate results
 #'     (default: \code{"./"})
 #'   - \code{train_num_workers}: Number of parallel workers for data loading
@@ -90,7 +90,7 @@ modify_sidish_params <- function(usr_list = list()) {
     phase1_optimizer = "Adam",
     phase1_lr = 1.0e-4,
     phase1_lr_3 = 1.0e-4,
-    phase1_dropout = 0,
+    phase1_dropout = 0L,
     phase1_type = "Normal",
 
     # Phase 2: Deep Cox training
@@ -104,8 +104,8 @@ modify_sidish_params <- function(usr_list = list()) {
     # Training & risk definition
     train_iterations = 5L,
     train_percentile = 0.95,
-    train_steepness = 30,
-    train_path = "./",
+    train_steepness = 30L,
+    train_path = "./SIDISH_res/",
     train_num_workers = 0L,
     train_distribution_fit = "fitted",
 

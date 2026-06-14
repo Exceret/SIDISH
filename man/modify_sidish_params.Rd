@@ -47,7 +47,7 @@ VAE Training (Phase 1) parameters:
 \item \code{phase1_optimizer}: Optimizer algorithm for VAE training (default: \code{"Adam"})
 \item \code{phase1_lr}: Initial learning rate for VAE training (default: \code{1.0e-4})
 \item \code{phase1_lr_3}: Learning rate for later VAE training iterations (default: \code{1.0e-4})
-\item \code{phase1_dropout}: Dropout rate for VAE layers (default: \code{0})
+\item \code{phase1_dropout}: Dropout rate for VAE layers (default: \code{0L})
 \item \code{phase1_type}: VAE architecture type: \code{"Normal"} (standard) or \code{"Dense"}
 (dense representation) (default: \code{"Normal"})
 }
@@ -59,7 +59,7 @@ Deep Cox Training (Phase 2) parameters:
 \item \code{phase2_hidden}: Number of neurons in hidden layer of Deep Cox network
 (default: \code{128L})
 \item \code{phase2_lr}: Learning rate for Deep Cox model training (default: \code{1.0e-4})
-\item \code{phase2_dropout}: Dropout rate for Deep Cox layers (default: \code{0})
+\item \code{phase2_dropout}: Dropout rate for Deep Cox layers (default: \code{0L})
 \item \code{phase2_test_size}: Proportion of samples reserved for validation/testing
 (default: \code{0.2})
 \item \code{phase2_batch_size_bulk}: Mini-batch size for bulk data during Deep Cox training
@@ -73,7 +73,7 @@ Training & Risk Definition parameters:
 \item \code{train_percentile}: Percentile threshold for defining high-risk cells
 (e.g., 0.95 = top 5\\% riskiest cells) (default: \code{0.95})
 \item \code{train_steepness}: Scaling factor controlling steepness of risk score updates
-during iterations (default: \code{30})
+during iterations (default: \code{30L})
 \item \code{train_path}: Directory path for saving model checkpoints and intermediate results
 (default: \code{"./"})
 \item \code{train_num_workers}: Number of parallel workers for data loading

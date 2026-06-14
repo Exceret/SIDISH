@@ -1,19 +1,33 @@
+"""This script is used to train SIDISH model. Receiving data from R script.
+
+Returns:
+    pd.DataFrame: Rows are cells, columns are predicted labels.
+"""
+
+import random
+import os
 from typing import Any, Callable, Optional, Literal
 import inspect
+from datetime import datetime
+from pathlib import Path
 import scanpy as sc
 import pandas as pd
 import numpy as np
 import torch
-import random
-import os
-from SIDISH import SIDISH as sidish
+import anndata
+from SIDISH.SIDISH import SIDISH as sidish
 from SIDISH.SIDISH import preprocess
-from datetime import datetime
-from pathlib import Path
+
+anndata.settings.allow_write_nullable_strings = True
 
 
 # Set seeds for reproducibility
 def set_seed(seed: int) -> None:
+    """Set seed & env config for reproductivity
+
+    Args:
+        seed (int): default 123
+    """
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -85,6 +99,17 @@ def main(
     survival_df: pd.DataFrame,
     seed: int = 123,
 ) -> None:
+    """Main processing
+
+    Args:
+        adata (sc.AnnData): An AnnData obj converted from Seurat obj
+        bulk (pd.DataFrame): Received from R data.frame, rows are cells, columns are genes
+        survival_df (pd.DataFrame): survival data including time and status
+        seed (int, optional): Defaults to 123.
+
+    Returns:
+        AnnData: _description_
+    """
     other_args: dict[str, Any] = globals()
     verbose: bool = other_args.get("verbose", True)
 
@@ -117,7 +142,7 @@ def main(
     sdh: sidish = sidish(
         adata=adata,
         bulk=bulk_merged,
-        device=other_args.get("device", "cuda"), # or "cpu"
+        device=other_args.get("device", "cuda"),  # or "cpu"
         seed=ite,
         use_spatial_graph=other_args.get("use_spatial_graph", False),
         k_neighbors=other_args.get("k_neighbors", None),
@@ -173,7 +198,7 @@ def main(
 
     path: str = other_args.get("train_path", "./SIDISH_res/")
     Path(path).mkdir(parents=True, exist_ok=True)
-    
+
     train_adata: sc.AnnData = sdh.train(
         # Number of training iterations.
         iterations=other_args.get("train_iterations", 5),
@@ -206,4 +231,4 @@ res: sc.AnnData = main(
     seed=globals().get("seed"),
 )
 
-sidish_obs: pd.DataFrame = res.obs[["SIDISH","SIDISH_value","risk_value"]]
+sidish_obs: pd.DataFrame = res.obs[["SIDISH", "SIDISH_value", "risk_value"]]

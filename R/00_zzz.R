@@ -9,5 +9,29 @@
   invisible()
 }
 
+.onLoad <- function(libname, pkgname) {
+  # Declare Python dependencies (required by inst/python/ scripts)
+  reticulate::py_require(c(
+    "numpy",
+    "pandas",
+    "torch",
+    "torchvision",
+    "scanpy",
+    "scikit-learn",
+    "tqdm",
+    "lifelines",
+    "pyro-ppl",
+    "seaborn",
+    "matplotlib",
+    "scipy",
+    "statsmodels",
+    "imbalanced-learn",
+    "shap",
+    "torch-geometric",
+    "joblib"
+  ))
+  invisible()
+}
+
 #' @keywords internal
 ts_cli <- SigBridgeRUtils::CreateTimeStampCliEnv()
