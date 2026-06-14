@@ -13,6 +13,11 @@ knitr::opts_chunk$set(
 )
 ```
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/Exceret/SIDISH/actions/workflows/R-CMD-check.yaml/badge.svghttps://github.com/Exceret/SIDISH/actions/workflows/R-CMD-check.yaml/badge.svghttps://github.com/Exceret/SIDISH/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Exceret/SIDISH/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
+
 # **SIDISH**  
 
 **SIDISH Identifies High-Risk Disease-Associated Cells and Biomarkers by Integrating Single-Cell Depth and Bulk Breadth**
